@@ -13,11 +13,20 @@ def atualiza_fim(event):
     canvas.delete("all")
     
     if ferramenta == "linha":
-        canvas.create_line(ini_x, ini_y, fim_x, fim_y)
+        canvas.create_line(
+            ini_x, ini_y, fim_x, fim_y
+             fill=cor_borda
+         )
     elif ferramenta == "retangulo":
-        canvas.create_rectangle(ini_x, ini_y, fim_x, fim_y)
+        canvas.create_rectangle(
+            ini_x, ini_y, fim_x, fim_y
+            outline=cor_borda
+        )
     elif ferramenta == "oval":
-        canvas.create_oval(ini_x, ini_y, fim_x, fim_y)
+        canvas.create_oval(
+            ini_x, ini_y, fim_x, fim_y
+            outline=cor_borda
+        )
 
 def usar_linha():
     global ferramenta
@@ -30,6 +39,18 @@ def usar_retangulo():
 def usar_oval():
     global ferramenta
     ferramenta = "oval"
+
+def usar_preto():
+    global cor_borda
+    cor_borda = "black"
+
+def usar_vermelho():
+    global cor_borda
+    cor_borda = "red"
+
+def usar_azul():
+    global cor_borda
+    cor_borda = "blue"
 
 root = tk.Tk()
 root.title("Paint")
@@ -46,10 +67,20 @@ btn_retangulo.pack(side=tk.LEFT, padx=2)
 btn_oval = tk.Button(frame_botoes, text="Oval", command=usar_oval)
 btn_oval.pack(side=tk.LEFT, padx=2)
 
+btn_preto = tk.Button(frame_botoes, text="Preto", command=usar_preto)
+btn_preto.pack(side=tk.LEFT, padx=2)
+
+btn_vermelho = tk.Button(frame_botoes, text="Vermelho", command=usar_vermelho)
+btn_vermelho.pack(side=tk.LEFT, padx=2)
+
+btn_azul = tk.Button(frame_botoes, text="Azul", command=usar_azul)
+btn_azul.pack(side=tk.LEFT, padx=2)
+
 canvas = tk.Canvas(root, bg='white', width=600, height=600)
 canvas.pack()
 
 ferramenta = "linha"
+cor_borda = "black"
 
 ini_x = None
 ini_y = None
