@@ -14,18 +14,20 @@ def atualiza_fim(event):
     
     if ferramenta == "linha":
         canvas.create_line(
-            ini_x, ini_y, fim_x, fim_y
-             fill=cor_borda
-         )
+            ini_x, ini_y, fim_x, fim_y,
+            fill=cor_borda
+        )
     elif ferramenta == "retangulo":
         canvas.create_rectangle(
-            ini_x, ini_y, fim_x, fim_y
-            outline=cor_borda
+            ini_x, ini_y, fim_x, fim_y,
+            outline=cor_borda,
+            fill=cor_preenchimento
         )
     elif ferramenta == "oval":
         canvas.create_oval(
-            ini_x, ini_y, fim_x, fim_y
-            outline=cor_borda
+            ini_x, ini_y, fim_x, fim_y,
+            outline=cor_borda,
+            fill=cor_preenchimento
         )
 
 def usar_linha():
@@ -52,6 +54,18 @@ def usar_azul():
     global cor_borda
     cor_borda = "blue"
 
+def usar_amarelo():
+    global cor_preenchimento
+    cor_preenchimento = "yellow"
+
+def usar_verde():
+    global cor_preenchimento
+    cor_preenchimento = "green"
+
+def usar_cinza():
+    global cor_preenchimento
+    cor_preenchimento = "gray"
+
 root = tk.Tk()
 root.title("Paint")
 
@@ -76,11 +90,21 @@ btn_vermelho.pack(side=tk.LEFT, padx=2)
 btn_azul = tk.Button(frame_botoes, text="Azul", command=usar_azul)
 btn_azul.pack(side=tk.LEFT, padx=2)
 
+btn_amarelo = tk.Button(frame_botoes, text="Preench. Amarelo", command=usar_amarelo)
+btn_amarelo.pack(side=tk.LEFT, padx=2)
+
+btn_verde = tk.Button(frame_botoes, text="Preench. Verde", command=usar_verde)
+btn_verde.pack(side=tk.LEFT, padx=2)
+
+btn_cinza = tk.Button(frame_botoes, text="Preench. Cinza", command=usar_cinza)
+btn_cinza.pack(side=tk.LEFT, padx=2)
+
 canvas = tk.Canvas(root, bg='white', width=600, height=600)
 canvas.pack()
 
 ferramenta = "linha"
 cor_borda = "black"
+cor_preenchimento = "white"
 
 ini_x = None
 ini_y = None
