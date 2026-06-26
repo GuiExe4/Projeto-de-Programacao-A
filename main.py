@@ -1,5 +1,40 @@
 import tkinter as tk
 
+class Figura:
+    def __init__(self, x1, y1, x2, y2, cor_borda, cor_preenchimento):
+        self.x1 = x1
+        self.y1 = y1
+        self.x2 = x2
+        self.y2 = y2
+        self.cor_borda = cor_borda
+        self.cor_preenchimento = cor_preenchimento
+
+    def desenhar(self, canvas):
+        pass
+
+class Linha(Figura):
+    def desenhar(self, canvas):
+        canvas.create_line(
+            self.x1, self.y1, self.x2, self.y2,
+            fill=self.cor_borda
+        )
+
+class Retangulo(Figura):
+    def desenhar(self, canvas):
+        canvas.create_rectangle(
+            self.x1, self.y1, self.x2, self.y2,
+            outline=self.cor_borda,
+            fill=self.cor_preenchimento
+        )
+
+class Oval(Figura):
+    def desenhar(self, canvas):
+        canvas.create_oval(
+            self.x1, self.y1, self.x2, self.y2,
+            outline=self.cor_borda,
+            fill=self.cor_preenchimento
+        )
+
 def marca_inicio(event):
     global ini_x, ini_y
     ini_x = event.x
@@ -13,22 +48,13 @@ def atualiza_fim(event):
     canvas.delete("all")
     
     if ferramenta == "linha":
-        canvas.create_line(
-            ini_x, ini_y, fim_x, fim_y,
-            fill=cor_borda
-        )
+        forma = Linha(ini_x, ini_y, fim_x, fim_y, cor_borda, cor_preenchimento)
     elif ferramenta == "retangulo":
-        canvas.create_rectangle(
-            ini_x, ini_y, fim_x, fim_y,
-            outline=cor_borda,
-            fill=cor_preenchimento
-        )
+        forma = Retangulo(ini_x, ini_y, fim_x, fim_y, cor_borda, cor_preenchimento)
     elif ferramenta == "oval":
-        canvas.create_oval(
-            ini_x, ini_y, fim_x, fim_y,
-            outline=cor_borda,
-            fill=cor_preenchimento
-        )
+        forma = Oval(ini_x, ini_y, fim_x, fim_y, cor_borda, cor_preenchimento)
+        
+    forma.desenhar(canvas)
 
 def usar_linha():
     global ferramenta
@@ -67,7 +93,7 @@ def usar_cinza():
     cor_preenchimento = "gray"
 
 root = tk.Tk()
-root.title("Paint")
+root.title("Paint OO")
 
 frame_botoes = tk.Frame(root)
 frame_botoes.pack(fill=tk.X, padx=5, pady=5)
