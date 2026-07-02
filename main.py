@@ -1,77 +1,16 @@
 import tkinter as tk
-
-class Figura:
-    def __init__(self, x1, y1, x2, y2, cor_borda, cor_preenchimento):
-        self.x1 = x1
-        self.y1 = y1
-        self.x2 = x2
-        self.y2 = y2
-        self.cor_borda = cor_borda
-        self.cor_preenchimento = cor_preenchimento
-
-    def desenhar(self, canvas):
-        pass
-
-class Linha(Figura):
-    def desenhar(self, canvas):
-        canvas.create_line(
-            self.x1, self.y1, self.x2, self.y2,
-            fill=self.cor_borda
-        )
-
-class Retangulo(Figura):
-    def desenhar(self, canvas):
-        canvas.create_rectangle(
-            self.x1, self.y1, self.x2, self.y2,
-            outline=self.cor_borda,
-            fill=self.cor_preenchimento
-        )
-
-class Oval(Figura):
-    def desenhar(self, canvas):
-        canvas.create_oval(
-            self.x1, self.y1, self.x2, self.y2,
-            outline=self.cor_borda,
-            fill=self.cor_preenchimento
-        )
-
-class MaoLivre(Figura):
-    def __init__(self, cor_borda):
-        self.pontos = []
-        self.cor_borda = cor_borda
-
-    def adicionar_ponto(self, x, y):
-        self.pontos.append((x, y))
-
-    def desenhar(self, canvas):
-        if len(self.pontos) > 1:
-            canvas.create_line(
-                self.pontos,
-                fill=self.cor_borda
-            )
-
-class Poligono(Figura):
-    def desenhar(self, canvas):
-
-        # calcula um terceiro vértice automaticamente
-        x3 = (self.x1 + self.x2) // 2
-        y3 = self.y1
-
-        canvas.create_polygon(
-            self.x1, self.y2,
-            self.x2, self.y2,
-            x3, y3,
-            outline=self.cor_borda,
-            fill=self.cor_preenchimento
-        ) 
+from figuras import Linha, Retangulo, Oval, Poligono, MaoLivre
 
 def marca_inicio(event):
-    global ini_x, ini_y
+    global ini_x, ini_y, forma_mao_livre
     ini_x = event.x
     ini_y = event.y
+    if ferramenta == "mao_livre":
+        forma_mao_livre = MaoLivre(cor_borda)
+        forma_mao_livre.adicionar_ponto(ini_x, ini_y)
 
 def atualiza_fim(event):
-    global fim_x, fim_y
+    global fim_x, fim_y, forma_mao_livre
     fim_x = event.x
     fim_y = event.y
     
@@ -83,19 +22,12 @@ def atualiza_fim(event):
         forma = Retangulo(ini_x, ini_y, fim_x, fim_y, cor_borda, cor_preenchimento)
     elif ferramenta == "oval":
         forma = Oval(ini_x, ini_y, fim_x, fim_y, cor_borda, cor_preenchimento)
-     
     elif ferramenta == "poligono":
-        forma = Poligono(
-            ini_x,
-            ini_y,
-            fim_x,
-            fim_y,
-            cor_borda,
-            cor_preenchimento
-        )
-
-    elif ferramenta == "maolivre":
-        forma.adicionar_ponto(event.x, event.y)  
+        forma = Poligono(ini_x, ini_y, fim_x, fim_y, cor_borda, cor_preenchimento)
+    elif ferramenta == "mao_livre":
+        forma_mao_livre.adicionar_ponto(fim_x, fim_y)
+        forma = forma_mao_livre
+        
     forma.desenhar(canvas)
 
 def usar_linha():
@@ -113,6 +45,10 @@ def usar_oval():
 def usar_poligono():
     global ferramenta
     ferramenta = "poligono"
+
+def usar_mao_livre():
+    global ferramenta
+    ferramenta = "mao_livre"
 
 def usar_preto():
     global cor_borda
@@ -156,6 +92,9 @@ btn_oval.pack(side=tk.LEFT, padx=2)
 btn_poligono = tk.Button(frame_botoes, text="Polígono", command=usar_poligono)
 btn_poligono.pack(side=tk.LEFT, padx=2)
 
+btn_mao_livre = tk.Button(frame_botoes, text="Mão Livre", command=usar_mao_livre)
+btn_mao_livre.pack(side=tk.LEFT, padx=2)
+
 btn_preto = tk.Button(frame_botoes, text="Preto", command=usar_preto)
 btn_preto.pack(side=tk.LEFT, padx=2)
 
@@ -185,6 +124,7 @@ ini_x = None
 ini_y = None
 fim_x = None
 fim_y = None
+forma_mao_livre = None
 
 canvas.bind('<ButtonPress-1>', marca_inicio)
 canvas.bind('<B1-Motion>', atualiza_fim)
