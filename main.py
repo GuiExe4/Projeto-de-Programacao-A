@@ -83,7 +83,19 @@ def atualiza_fim(event):
         forma = Retangulo(ini_x, ini_y, fim_x, fim_y, cor_borda, cor_preenchimento)
     elif ferramenta == "oval":
         forma = Oval(ini_x, ini_y, fim_x, fim_y, cor_borda, cor_preenchimento)
-        
+     
+    elif ferramenta == "poligono":
+        forma = Poligono(
+            ini_x,
+            ini_y,
+            fim_x,
+            fim_y,
+            cor_borda,
+            cor_preenchimento
+        )
+
+    elif ferramenta == "maolivre":
+        forma.adicionar_ponto(event.x, event.y)  
     forma.desenhar(canvas)
 
 def usar_linha():
