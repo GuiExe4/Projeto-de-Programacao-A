@@ -35,6 +35,36 @@ class Oval(Figura):
             fill=self.cor_preenchimento
         )
 
+class MaoLivre(Figura):
+    def __init__(self, cor_borda):
+        self.pontos = []
+        self.cor_borda = cor_borda
+
+    def adicionar_ponto(self, x, y):
+        self.pontos.append((x, y))
+
+    def desenhar(self, canvas):
+        if len(self.pontos) > 1:
+            canvas.create_line(
+                self.pontos,
+                fill=self.cor_borda
+            )
+
+class Poligono(Figura):
+    def desenhar(self, canvas):
+
+        # calcula um terceiro vértice automaticamente
+        x3 = (self.x1 + self.x2) // 2
+        y3 = self.y1
+
+        canvas.create_polygon(
+            self.x1, self.y2,
+            self.x2, self.y2,
+            x3, y3,
+            outline=self.cor_borda,
+            fill=self.cor_preenchimento
+        ) 
+
 def marca_inicio(event):
     global ini_x, ini_y
     ini_x = event.x
@@ -67,6 +97,10 @@ def usar_retangulo():
 def usar_oval():
     global ferramenta
     ferramenta = "oval"
+
+def usar_poligono():
+    global ferramenta
+    ferramenta = "poligono"
 
 def usar_preto():
     global cor_borda
@@ -106,6 +140,9 @@ btn_retangulo.pack(side=tk.LEFT, padx=2)
 
 btn_oval = tk.Button(frame_botoes, text="Oval", command=usar_oval)
 btn_oval.pack(side=tk.LEFT, padx=2)
+
+btn_poligono = tk.Button(frame_botoes, text="Polígono", command=usar_poligono)
+btn_poligono.pack(side=tk.LEFT, padx=2)
 
 btn_preto = tk.Button(frame_botoes, text="Preto", command=usar_preto)
 btn_preto.pack(side=tk.LEFT, padx=2)
