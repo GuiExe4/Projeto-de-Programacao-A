@@ -17,4 +17,3 @@ def test_serializacao_round_trip():
     assert nova_figura.x1 == 10
     assert nova_figura.cor_preenchimento == "blue"
 
-  
