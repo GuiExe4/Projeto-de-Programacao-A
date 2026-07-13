@@ -40,6 +40,12 @@ class JanelaPaint:
         
         self.btn_cinza = tk.Button(self.frame_botoes, text="Preench. Cinza")
         self.btn_cinza.pack(side=tk.LEFT, padx=2)
+
+        self.btn_salvar = tk.Button(self.frame_botoes, text="Salvar", bg="lightgreen")
+        self.btn_salvar.pack(side=tk.RIGHT, padx=5)
+
+        self.btn_abrir = tk.Button(self.frame_botoes, text="Abrir", bg="lightblue")
+        self.btn_abrir.pack(side=tk.RIGHT, padx=5)
         
         self.canvas = tk.Canvas(self.root, bg='white', width=600, height=600)
         self.canvas.pack()
