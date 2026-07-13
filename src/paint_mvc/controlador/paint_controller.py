@@ -1,4 +1,6 @@
 import tkinter as tk
+import json
+from tkinter import filedialog
 from modelo.figuras import Linha, Retangulo, Oval, Poligono, MaoLivre
 
 class EstadoFerramenta:
@@ -12,36 +14,40 @@ class EstadoLinha(EstadoFerramenta):
         controller.ini_x, controller.ini_y = event.x, event.y
     def arrastar(self, controller, event):
         canvas = controller.view.canvas
-        canvas.delete("all")
+        controller.redesenhar_todos()
         forma = Linha(controller.ini_x, controller.ini_y, event.x, event.y, controller.cor_borda, controller.cor_preenchimento)
         forma.desenhar(canvas)
+        controller.forma_temporaria = forma
 
 class EstadoRetangulo(EstadoFerramenta):
     def clicar(self, controller, event):
         controller.ini_x, controller.ini_y = event.x, event.y
     def arrastar(self, controller, event):
         canvas = controller.view.canvas
-        canvas.delete("all")
+        controller.redesenhar_todos()
         forma = Retangulo(controller.ini_x, controller.ini_y, event.x, event.y, controller.cor_borda, controller.cor_preenchimento)
         forma.desenhar(canvas)
+        controller.forma_temporaria = forma
 
 class EstadoOval(EstadoFerramenta):
     def clicar(self, controller, event):
         controller.ini_x, controller.ini_y = event.x, event.y
     def arrastar(self, controller, event):
         canvas = controller.view.canvas
-        canvas.delete("all")
+        controller.redesenhar_todos()
         forma = Oval(controller.ini_x, controller.ini_y, event.x, event.y, controller.cor_borda, controller.cor_preenchimento)
         forma.desenhar(canvas)
+        controller.forma_temporaria = forma
 
 class EstadoPoligono(EstadoFerramenta):
     def clicar(self, controller, event):
         controller.ini_x, controller.ini_y = event.x, event.y
     def arrastar(self, controller, event):
         canvas = controller.view.canvas
-        canvas.delete("all")
+        controller.redesenhar_todos()
         forma = Poligono(controller.ini_x, controller.ini_y, event.x, event.y, controller.cor_borda, controller.cor_preenchimento)
         forma.desenhar(canvas)
+        controller.forma_temporaria = forma
 
 class EstadoMaoLivre(EstadoFerramenta):
     def clicar(self, controller, event):
@@ -49,9 +55,10 @@ class EstadoMaoLivre(EstadoFerramenta):
         controller.forma_mao_livre.adicionar_ponto(event.x, event.y)
     def arrastar(self, controller, event):
         canvas = controller.view.canvas
-        canvas.delete("all")
+        controller.redesenhar_todos()
         controller.forma_mao_livre.adicionar_ponto(event.x, event.y)
         controller.forma_mao_livre.desenhar(canvas)
+        controller.forma_temporaria = controller.forma_mao_livre
 
 class PaintController:
     def __init__(self, view):
@@ -61,6 +68,9 @@ class PaintController:
         self.ini_x = None
         self.ini_y = None
         self.forma_mao_livre = None
+        self.forma_temporaria = None
+        
+        self.historico_figuras = []
         
         self.estado_atual = EstadoLinha()
         self.vincular_eventos()
@@ -79,9 +89,13 @@ class PaintController:
         self.view.btn_amarelo.config(command=lambda: self.mudar_preenchimento("yellow"))
         self.view.btn_verde.config(command=lambda: self.mudar_preenchimento("green"))
         self.view.btn_cinza.config(command=lambda: self.mudar_preenchimento("gray"))
+
+        self.view.btn_salvar.config(command=self.salvar_desenho)
+        self.view.btn_abrir.config(command=self.abrir_desenho)
         
         self.view.canvas.bind('<ButtonPress-1>', self.marca_inicio)
         self.view.canvas.bind('<B1-Motion>', self.atualiza_fim)
+        self.view.canvas.bind('<ButtonRelease-1>', self.solta_clique)
 
     def definir_estado(self, estado):
         self.estado_atual = estado
@@ -93,7 +107,48 @@ class PaintController:
         self.cor_preenchimento = cor
 
     def marca_inicio(self, event):
+        self.forma_temporaria = None
         self.estado_atual.clicar(self, event)
 
     def atualiza_fim(self, event):
         self.estado_atual.arrastar(self, event)
+
+    def solta_clique(self, event):
+        if self.forma_temporaria:
+            self.historico_figuras.append(self.forma_temporaria)
+            self.forma_temporaria = None
+
+    def redesenhar_todos(self):
+        self.view.canvas.delete("all")
+        for forma in self.historico_figuras:
+            forma.desenhar(self.view.canvas)
+
+    def salvar_desenho(self):
+        caminho = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json")])
+        if caminho:
+            lista_dicts = [forma.to_dict() for forma in self.historico_figuras]
+            with open(caminho, 'w') as f:
+                json.dump(lista_dicts, f)
+
+    def abrir_desenho(self):
+        caminho = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
+        if caminho:
+            with open(caminho, 'r') as f:
+                lista_dicts = json.load(f)
+            
+            self.historico_figuras.clear()
+            mapeamento_classes = {
+                "Linha": Linha,
+                "Retangulo": Retangulo,
+                "Oval": Oval,
+                "Poligono": Poligono,
+                "MaoLivre": MaoLivre
+            }
+            
+            for data in lista_dicts:
+                tipo = data["tipo"]
+                if tipo in mapeamento_classes:
+                    classe = mapeamento_classes[tipo]
+                    self.historico_figuras.append(classe.from_dict(data))
+            
+            self.redesenhar_todos()
