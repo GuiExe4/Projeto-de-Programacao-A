@@ -1,26 +1,76 @@
 import tkinter as tk
 from modelo.figuras import Linha, Retangulo, Oval, Poligono, MaoLivre
 
+class EstadoFerramenta:
+    def clicar(self, controller, event):
+        pass
+    def arrastar(self, controller, event):
+        pass
+
+class EstadoLinha(EstadoFerramenta):
+    def clicar(self, controller, event):
+        controller.ini_x, controller.ini_y = event.x, event.y
+    def arrastar(self, controller, event):
+        canvas = controller.view.canvas
+        canvas.delete("all")
+        forma = Linha(controller.ini_x, controller.ini_y, event.x, event.y, controller.cor_borda, controller.cor_preenchimento)
+        forma.desenhar(canvas)
+
+class EstadoRetangulo(EstadoFerramenta):
+    def clicar(self, controller, event):
+        controller.ini_x, controller.ini_y = event.x, event.y
+    def arrastar(self, controller, event):
+        canvas = controller.view.canvas
+        canvas.delete("all")
+        forma = Retangulo(controller.ini_x, controller.ini_y, event.x, event.y, controller.cor_borda, controller.cor_preenchimento)
+        forma.desenhar(canvas)
+
+class EstadoOval(EstadoFerramenta):
+    def clicar(self, controller, event):
+        controller.ini_x, controller.ini_y = event.x, event.y
+    def arrastar(self, controller, event):
+        canvas = controller.view.canvas
+        canvas.delete("all")
+        forma = Oval(controller.ini_x, controller.ini_y, event.x, event.y, controller.cor_borda, controller.cor_preenchimento)
+        forma.desenhar(canvas)
+
+class EstadoPoligono(EstadoFerramenta):
+    def clicar(self, controller, event):
+        controller.ini_x, controller.ini_y = event.x, event.y
+    def arrastar(self, controller, event):
+        canvas = controller.view.canvas
+        canvas.delete("all")
+        forma = Poligono(controller.ini_x, controller.ini_y, event.x, event.y, controller.cor_borda, controller.cor_preenchimento)
+        forma.desenhar(canvas)
+
+class EstadoMaoLivre(EstadoFerramenta):
+    def clicar(self, controller, event):
+        controller.forma_mao_livre = MaoLivre(controller.cor_borda)
+        controller.forma_mao_livre.adicionar_ponto(event.x, event.y)
+    def arrastar(self, controller, event):
+        canvas = controller.view.canvas
+        canvas.delete("all")
+        controller.forma_mao_livre.adicionar_ponto(event.x, event.y)
+        controller.forma_mao_livre.desenhar(canvas)
+
 class PaintController:
     def __init__(self, view):
         self.view = view
-        
-        self.ferramenta = "linha"
         self.cor_borda = "black"
         self.cor_preenchimento = "white"
-        
         self.ini_x = None
         self.ini_y = None
         self.forma_mao_livre = None
         
+        self.estado_atual = EstadoLinha()
         self.vincular_eventos()
 
     def vincular_eventos(self):
-        self.view.btn_linha.config(command=lambda: self.mudar_ferramenta("linha"))
-        self.view.btn_retangulo.config(command=lambda: self.mudar_ferramenta("retangulo"))
-        self.view.btn_oval.config(command=lambda: self.mudar_ferramenta("oval"))
-        self.view.btn_poligono.config(command=lambda: self.mudar_ferramenta("poligono"))
-        self.view.btn_mao_livre.config(command=lambda: self.mudar_ferramenta("mao_livre"))
+        self.view.btn_linha.config(command=lambda: self.definir_estado(EstadoLinha()))
+        self.view.btn_retangulo.config(command=lambda: self.definir_estado(EstadoRetangulo()))
+        self.view.btn_oval.config(command=lambda: self.definir_estado(EstadoOval()))
+        self.view.btn_poligono.config(command=lambda: self.definir_estado(EstadoPoligono()))
+        self.view.btn_mao_livre.config(command=lambda: self.definir_estado(EstadoMaoLivre()))
         
         self.view.btn_preto.config(command=lambda: self.mudar_cor_borda("black"))
         self.view.btn_vermelho.config(command=lambda: self.mudar_cor_borda("red"))
@@ -33,8 +83,8 @@ class PaintController:
         self.view.canvas.bind('<ButtonPress-1>', self.marca_inicio)
         self.view.canvas.bind('<B1-Motion>', self.atualiza_fim)
 
-    def mudar_ferramenta(self, ferramenta):
-        self.ferramenta = ferramenta
+    def definir_estado(self, estado):
+        self.estado_atual = estado
 
     def mudar_cor_borda(self, cor):
         self.cor_borda = cor
@@ -43,28 +93,7 @@ class PaintController:
         self.cor_preenchimento = cor
 
     def marca_inicio(self, event):
-        self.ini_x = event.x
-        self.ini_y = event.y
-        if self.ferramenta == "mao_livre":
-            self.forma_mao_livre = MaoLivre(self.cor_borda)
-            self.forma_mao_livre.adicionar_ponto(self.ini_x, self.ini_y)
+        self.estado_atual.clicar(self, event)
 
     def atualiza_fim(self, event):
-        fim_x = event.x
-        fim_y = event.y
-        
-        self.view.canvas.delete("all")
-        
-        if self.ferramenta == "linha":
-            forma = Linha(self.ini_x, self.ini_y, fim_x, fim_y, self.cor_borda, self.cor_preenchimento)
-        elif self.ferramenta == "retangulo":
-            forma = Retangulo(self.ini_x, self.ini_y, fim_x, fim_y, self.cor_borda, self.cor_preenchimento)
-        elif self.ferramenta == "oval":
-            forma = Oval(self.ini_x, self.ini_y, fim_x, fim_y, self.cor_borda, self.cor_preenchimento)
-        elif self.ferramenta == "poligono":
-            forma = Poligono(self.ini_x, self.ini_y, fim_x, fim_y, self.cor_borda, self.cor_preenchimento)
-        elif self.ferramenta == "mao_livre":
-            self.forma_mao_livre.adicionar_ponto(fim_x, fim_y)
-            forma = self.forma_mao_livre
-            
-        forma.desenhar(self.view.canvas)
+        self.estado_atual.arrastar(self, event)
