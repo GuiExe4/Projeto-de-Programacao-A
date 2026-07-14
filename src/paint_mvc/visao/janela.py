@@ -29,6 +29,12 @@ class JanelaPaint:
         self.btn_apagar = tk.Button(self.frame_botoes, text="Apagar", bg="#ffcccc")
         self.btn_apagar.pack(side=tk.LEFT, padx=2)
 
+        self.btn_frente = tk.Button(self.frame_botoes, text="Frente", bg="lightyellow")
+        self.btn_frente.pack(side=tk.LEFT, padx=2)
+
+        self.btn_tras = tk.Button(self.frame_botoes, text="Trás", bg="lightyellow")
+        self.btn_tras.pack(side=tk.LEFT, padx=2)
+
         self.btn_preto = tk.Button(self.frame_botoes, text="Preto")
         self.btn_preto.pack(side=tk.LEFT, padx=2)
 
@@ -84,5 +90,5 @@ class JanelaPaint:
     def limpar_destaque(self):
         self.canvas.delete("selecao")
 
-    def vincular_teclado(self, callback):
-        self.root.bind("<Delete>", callback)
+    def vincular_teclado(self, tecla, callback):
+        self.root.bind(tecla, callback)
