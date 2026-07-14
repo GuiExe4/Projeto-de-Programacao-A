@@ -103,12 +103,13 @@ class PaintController:
         self.figura_selecionada = None
         self.ultimo_x = 0
         self.ultimo_y = 0
+        self.area_transferencia = None
 
         self.self_historico_figuras = []
         self.estado_atual = EstadoLinha()
         self.vincular_eventos()
 
-    def vincular_eventos(self):
+def vincular_eventos(self):
         self.view.btn_linha.config(command=lambda: self.definir_estado(EstadoLinha()))
         self.view.btn_retangulo.config(command=lambda: self.definir_estado(EstadoRetangulo()))
         self.view.btn_oval.config(command=lambda: self.definir_estado(EstadoOval()))
@@ -116,6 +117,8 @@ class PaintController:
         self.view.btn_mao_livre.config(command=lambda: self.definir_estado(EstadoMaoLivre()))
         self.view.btn_selecionar.config(command=lambda: self.definir_estado(EstadoSelecionar()))
         self.view.btn_apagar.config(command=self.apagar_figura_selecionada)
+        self.view.btn_frente.config(command=self.trazer_para_frente)
+        self.view.btn_tras.config(command=self.enviar_para_tras)
 
         self.view.btn_preto.config(command=lambda: self.mudar_cor_borda("black"))
         self.view.btn_vermelho.config(command=lambda: self.mudar_cor_borda("red"))
@@ -132,7 +135,12 @@ class PaintController:
         self.view.canvas.bind('<B1-Motion>', self.atualiza_fim)
         self.view.canvas.bind('<ButtonRelease-1>', self.solta_clique)
         
-        self.view.vincular_teclado(self.apagar_figura_por_teclado)
+        # Suporte teclado
+        self.view.vincular_teclado("<Delete>", self.apagar_figura_por_teclado)
+        self.view.vincular_teclado("<Control-c>", self.copiar_figura)
+        self.view.vincular_teclado("<Control-C>", self.copiar_figura)
+        self.view.vincular_teclado("<Control-v>", self.colar_figura)
+        self.view.vincular_teclado("<Control-V>", self.colar_figura)
 
     def definir_estado(self, estado):
         self.estado_atual = estado
@@ -162,7 +170,51 @@ class PaintController:
     def apagar_figura_por_teclado(self, event):
         self.apagar_figura_selecionada()
 
+    def copiar_figura(self, event):
+        if self.figura_selecionada:
+            self.area_transferencia = self.figura_selecionada.to_dict()
+
+    def colar_figura(self, event):
+        if self.area_transferencia:
+            mapeamento_classes = {
+                "Linha": Linha,
+                "Retangulo": Retangulo,
+                "Oval": Oval,
+                "Poligono": Poligono,
+                "MaoLivre": MaoLivre
+            }
+            tipo = self.area_transferencia["tipo"]
+            if tipo in mapeamento_classes:
+                classe = mapeamento_classes[tipo]
+                nova_figura = classe.from_dict(self.area_transferencia)
+                
+                deslocamento = 15
+                if tipo == "MaoLivre":
+                    nova_figura.pontos = [(px + deslocamento, py + deslocamento) for px, py in nova_figura.pontos]
+                else:
+                    nova_figura.x1 += deslocamento
+                    nova_figura.y1 += deslocamento
+                    nova_figura.x2 += deslocamento
+                    nova_figura.y2 += deslocamento
+                
+                self.self_historico_figuras.append(nova_figura)
+                self.figura_selecionada = nova_figura
+                self.redesenhar_todos()
+
+    def trazer_para_frente(self):
+        if self.figura_selecionada and self.figura_selecionada in self.self_historico_figuras:
+            self.self_historico_figuras.remove(self.figura_selecionada)
+            self.self_historico_figuras.append(self.figura_selecionada)
+            self.redesenhar_todos()
+
+    def enviar_para_tras(self):
+        if self.figura_selecionada and self.figura_selecionada in self.self_historico_figuras:
+            self.self_historico_figuras.remove(self.figura_selecionada)
+            self.self_historico_figuras.insert(0, self.figura_selecionada)
+            self.redesenhar_todos()
+
     def marca_inicio(self, event):
+        self.view.canvas.focus_set()
         self.forma_temporaria = None
         self.estado_atual.clicar(self, event)
 
