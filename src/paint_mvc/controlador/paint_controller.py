@@ -115,6 +115,7 @@ class PaintController:
         self.view.btn_poligono.config(command=lambda: self.definir_estado(EstadoPoligono()))
         self.view.btn_mao_livre.config(command=lambda: self.definir_estado(EstadoMaoLivre()))
         self.view.btn_selecionar.config(command=lambda: self.definir_estado(EstadoSelecionar()))
+        self.view.btn_apagar.config(command=self.apagar_figura_selecionada)
 
         self.view.btn_preto.config(command=lambda: self.mudar_cor_borda("black"))
         self.view.btn_vermelho.config(command=lambda: self.mudar_cor_borda("red"))
@@ -130,6 +131,8 @@ class PaintController:
         self.view.canvas.bind('<ButtonPress-1>', self.marca_inicio)
         self.view.canvas.bind('<B1-Motion>', self.atualiza_fim)
         self.view.canvas.bind('<ButtonRelease-1>', self.solta_clique)
+        
+        self.view.vincular_teclado(self.apagar_figura_por_teclado)
 
     def definir_estado(self, estado):
         self.estado_atual = estado
@@ -139,9 +142,25 @@ class PaintController:
 
     def mudar_cor_borda(self, cor):
         self.cor_borda = cor
+        if self.figura_selecionada:
+            self.figura_selecionada.cor_borda = cor
+            self.redesenhar_todos()
 
     def mudar_preenchimento(self, cor):
         self.cor_preenchimento = cor
+        if self.figura_selecionada:
+            self.figura_selecionada.cor_preenchimento = cor
+            self.redesenhar_todos()
+
+    def apagar_figura_selecionada(self):
+        if self.figura_selecionada:
+            if self.figura_selecionada in self.self_historico_figuras:
+                self.self_historico_figuras.remove(self.figura_selecionada)
+            self.figura_selecionada = None
+            self.redesenhar_todos()
+
+    def apagar_figura_por_teclado(self, event):
+        self.apagar_figura_selecionada()
 
     def marca_inicio(self, event):
         self.forma_temporaria = None
