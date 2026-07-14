@@ -62,30 +62,47 @@ class EstadoMaoLivre(EstadoFerramenta):
 
 class EstadoSelecionar(EstadoFerramenta):
     def clicar(self, controller, event):
-        controller.figura_selecionada = None
+        shift_pressionado = bool(event.state & 0x0001)
+        
+        figura_clicada = None
         for figura in reversed(controller.self_historico_figuras):
             if figura.contem_ponto(event.x, event.y):
-                controller.figura_selecionada = figura
-                controller.ultimo_x = event.x
-                controller.ultimo_y = event.y
+                figura_clicada = figura
                 break
+        
+        if shift_pressionado:
+            if figura_clicada:
+                if figura_clicada in controller.figuras_selecionadas:
+                    controller.figuras_selecionadas.remove(figura_clicada)
+                else:
+                    controller.figuras_selecionadas.append(figura_clicada)
+        else:
+            if figura_clicada:
+                if figura_clicada not in controller.figuras_selecionadas:
+                    controller.figuras_selecionadas = [figura_clicada]
+            else:
+                controller.figuras_selecionadas = []
+                
+        controller.ultimo_x = event.x
+        controller.ultimo_y = event.y
         controller.redesenhar_todos()
 
     def arrastar(self, controller, event):
-        if controller.figura_selecionada:
+        if controller.figuras_selecionadas:
             dx = event.x - controller.ultimo_x
             dy = event.y - controller.ultimo_y
             
-            if controller.figura_selecionada.__class__.__name__ == "MaoLivre":
-                nova_lista = []
-                for px, py in controller.figura_selecionada.pontos:
-                    nova_lista.append((px + dx, py + dy))
-                controller.figura_selecionada.pontos = nova_lista
-            else:
-                controller.figura_selecionada.x1 += dx
-                controller.figura_selecionada.y1 += dy
-                controller.figura_selecionada.x2 += dx
-                controller.figura_selecionada.y2 += dy
+            for figura in controller.figuras_selecionadas:
+                if figura.__class__.__name__ == "MaoLivre":
+                    nova_lista = []
+                    for px, py in figura.pontos:
+                        nova_lista.append((px + dx, py + dy))
+                    figura.pontos = nova_lista
+                else:
+                    figura.x1 += dx
+                    figura.y1 += dy
+                    figura.x2 += dx
+                    figura.y2 += dy
             
             controller.ultimo_x = event.x
             controller.ultimo_y = event.y
@@ -100,16 +117,16 @@ class PaintController:
         self.ini_y = None
         self.forma_mao_livre = None
         self.forma_temporaria = None
-        self.figura_selecionada = None
+        self.figuras_selecionadas = []
         self.ultimo_x = 0
         self.ultimo_y = 0
-        self.area_transferencia = None
+        self.area_transferencia = []
 
         self.self_historico_figuras = []
         self.estado_atual = EstadoLinha()
         self.vincular_eventos()
 
-def vincular_eventos(self):
+    def vincular_eventos(self):
         self.view.btn_linha.config(command=lambda: self.definir_estado(EstadoLinha()))
         self.view.btn_retangulo.config(command=lambda: self.definir_estado(EstadoRetangulo()))
         self.view.btn_oval.config(command=lambda: self.definir_estado(EstadoOval()))
@@ -135,7 +152,6 @@ def vincular_eventos(self):
         self.view.canvas.bind('<B1-Motion>', self.atualiza_fim)
         self.view.canvas.bind('<ButtonRelease-1>', self.solta_clique)
         
-        # Suporte teclado
         self.view.vincular_teclado("<Delete>", self.apagar_figura_por_teclado)
         self.view.vincular_teclado("<Control-c>", self.copiar_figura)
         self.view.vincular_teclado("<Control-C>", self.copiar_figura)
@@ -145,34 +161,34 @@ def vincular_eventos(self):
     def definir_estado(self, estado):
         self.estado_atual = estado
         if not isinstance(estado, EstadoSelecionar):
-            self.figura_selecionada = None
+            self.figuras_selecionadas = []
             self.redesenhar_todos()
 
     def mudar_cor_borda(self, cor):
         self.cor_borda = cor
-        if self.figura_selecionada:
-            self.figura_selecionada.cor_borda = cor
-            self.redesenhar_todos()
+        for figura in self.figuras_selecionadas:
+            figura.cor_borda = cor
+        self.redesenhar_todos()
 
     def mudar_preenchimento(self, cor):
         self.cor_preenchimento = cor
-        if self.figura_selecionada:
-            self.figura_selecionada.cor_preenchimento = cor
-            self.redesenhar_todos()
+        for figura in self.figuras_selecionadas:
+            figura.cor_preenchimento = cor
+        self.redesenhar_todos()
 
     def apagar_figura_selecionada(self):
-        if self.figura_selecionada:
-            if self.figura_selecionada in self.self_historico_figuras:
-                self.self_historico_figuras.remove(self.figura_selecionada)
-            self.figura_selecionada = None
-            self.redesenhar_todos()
+        for figura in list(self.figuras_selecionadas):
+            if figura in self.self_historico_figuras:
+                self.self_historico_figuras.remove(figura)
+        self.figuras_selecionadas = []
+        self.redesenhar_todos()
 
     def apagar_figura_por_teclado(self, event):
         self.apagar_figura_selecionada()
 
     def copiar_figura(self, event):
-        if self.figura_selecionada:
-            self.area_transferencia = self.figura_selecionada.to_dict()
+        if self.figuras_selecionadas:
+            self.area_transferencia = [figura.to_dict() for figura in self.figuras_selecionadas]
 
     def colar_figura(self, event):
         if self.area_transferencia:
@@ -183,35 +199,41 @@ def vincular_eventos(self):
                 "Poligono": Poligono,
                 "MaoLivre": MaoLivre
             }
-            tipo = self.area_transferencia["tipo"]
-            if tipo in mapeamento_classes:
-                classe = mapeamento_classes[tipo]
-                nova_figura = classe.from_dict(self.area_transferencia)
-                
-                deslocamento = 15
-                if tipo == "MaoLivre":
-                    nova_figura.pontos = [(px + deslocamento, py + deslocamento) for px, py in nova_figura.pontos]
-                else:
-                    nova_figura.x1 += deslocamento
-                    nova_figura.y1 += deslocamento
-                    nova_figura.x2 += deslocamento
-                    nova_figura.y2 += deslocamento
-                
-                self.self_historico_figuras.append(nova_figura)
-                self.figura_selecionada = nova_figura
-                self.redesenhar_todos()
+            novas_selecionadas = []
+            for item in self.area_transferencia:
+                tipo = item["tipo"]
+                if tipo in mapeamento_classes:
+                    classe = mapeamento_classes[tipo]
+                    nova_figura = classe.from_dict(item)
+                    
+                    deslocamento = 15
+                    if tipo == "MaoLivre":
+                        nova_figura.pontos = [(px + deslocamento, py + deslocamento) for px, py in nova_figura.pontos]
+                    else:
+                        nova_figura.x1 += deslocamento
+                        nova_figura.y1 += deslocamento
+                        nova_figura.x2 += deslocamento
+                        nova_figura.y2 += deslocamento
+                    
+                    self.self_historico_figuras.append(nova_figura)
+                    novas_selecionadas.append(nova_figura)
+            
+            self.figuras_selecionadas = novas_selecionadas
+            self.redesenhar_todos()
 
     def trazer_para_frente(self):
-        if self.figura_selecionada and self.figura_selecionada in self.self_historico_figuras:
-            self.self_historico_figuras.remove(self.figura_selecionada)
-            self.self_historico_figuras.append(self.figura_selecionada)
-            self.redesenhar_todos()
+        for figura in list(self.figuras_selecionadas):
+            if figura in self.self_historico_figuras:
+                self.self_historico_figuras.remove(figura)
+                self.self_historico_figuras.append(figura)
+        self.redesenhar_todos()
 
     def enviar_para_tras(self):
-        if self.figura_selecionada and self.figura_selecionada in self.self_historico_figuras:
-            self.self_historico_figuras.remove(self.figura_selecionada)
-            self.self_historico_figuras.insert(0, self.figura_selecionada)
-            self.redesenhar_todos()
+        for figura in reversed(list(self.figuras_selecionadas)):
+            if figura in self.self_historico_figuras:
+                self.self_historico_figuras.remove(figura)
+                self.self_historico_figuras.insert(0, figura)
+        self.redesenhar_todos()
 
     def marca_inicio(self, event):
         self.view.canvas.focus_set()
@@ -230,8 +252,8 @@ def vincular_eventos(self):
         self.view.canvas.delete("all")
         for forma in self.self_historico_figuras:
             forma.desenhar(self.view.canvas)
-        if self.figura_selecionada and isinstance(self.estado_atual, EstadoSelecionar):
-            self.view.destacar_figura(self.figura_selecionada)
+        if isinstance(self.estado_atual, EstadoSelecionar):
+            self.view.destacar_figuras(self.figuras_selecionadas)
 
     def salvar_desenho(self):
         caminho = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json")])
@@ -247,7 +269,7 @@ def vincular_eventos(self):
                 lista_dicts = json.load(f)
 
             self.self_historico_figuras.clear()
-            self.figura_selecionada = None
+            self.figuras_selecionadas = []
             
             mapeamento_classes = {
                 "Linha": Linha,

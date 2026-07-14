@@ -62,30 +62,31 @@ class JanelaPaint:
         self.canvas = tk.Canvas(self.root, bg='white', width=600, height=600)
         self.canvas.pack()
 
-    def destacar_figura(self, figura):
+    def destacar_figuras(self, figuras):
         self.limpar_destaque()
-        if not figura:
-            return
+        for figura in figuras:
+            if not figura:
+                continue
+                
+            margem = 3
             
-        margem = 3
-        
-        if figura.__class__.__name__ == "MaoLivre" and figura.pontos:
-            xs = [p[0] for p in figura.pontos]
-            ys = [p[1] for p in figura.pontos]
-            xmin, xmax = min(xs) - margem, max(xs) + margem
-            ymin, ymax = min(ys) - margem, max(ys) + margem
-        else:
-            xmin = min(figura.x1, figura.x2) - margem
-            xmax = max(figura.x1, figura.x2) + margem
-            ymin = min(figura.y1, figura.y2) - margem
-            ymax = max(figura.y1, figura.y2) + margem
-        
-        self.canvas.create_rectangle(
-            xmin, ymin, xmax, ymax,
-            outline="red",
-            dash=(4, 4),
-            tags="selecao"
-        )
+            if figura.__class__.__name__ == "MaoLivre" and figura.pontos:
+                xs = [p[0] for p in figura.pontos]
+                ys = [p[1] for p in figura.pontos]
+                xmin, xmax = min(xs) - margem, max(xs) + margem
+                ymin, ymax = min(ys) - margem, max(ys) + margem
+            else:
+                xmin = min(figura.x1, figura.x2) - margem
+                xmax = max(figura.x1, figura.x2) + margem
+                ymin = min(figura.y1, figura.y2) - margem
+                ymax = max(figura.y1, figura.y2) + margem
+            
+            self.canvas.create_rectangle(
+                xmin, ymin, xmax, ymax,
+                outline="red",
+                dash=(4, 4),
+                tags="selecao"
+            )
 
     def limpar_destaque(self):
         self.canvas.delete("selecao")
