@@ -27,17 +27,45 @@ class Figura:
             cor_preenchimento=data["cor_preenchimento"]
         )
 
+    def contem_ponto(self, x, y):
+        margem = 5
+        xmin = min(self.x1, self.x2) - margem
+        xmax = max(self.x1, self.x2) + margem
+        ymin = min(self.y1, self.y2) - margem
+        ymax = max(self.y1, self.y2) + margem
+        return xmin <= x <= xmax and ymin <= y <= ymax
+
+
 class Linha(Figura):
     def desenhar(self, canvas):
         canvas.create_line(self.x1, self.y1, self.x2, self.y2, fill=self.cor_borda)
+
+    def contem_ponto(self, x, y):
+        margem = 5
+        xmin, xmax = min(self.x1, self.x2), max(self.x1, self.x2)
+        ymin, ymax = min(self.y1, self.y2), max(self.y1, self.y2)
+        
+        if not (xmin - margem <= x <= xmax + margem and ymin - margem <= y <= ymax + margem):
+            return False
+            
+        dx = self.x2 - self.x1
+        dy = self.y2 - self.y1
+        if dx == 0 and dy == 0:
+            return False
+            
+        distancia = abs(dy * x - dx * y + self.x2 * self.y1 - self.y2 * self.x1) / ((dy ** 2 + dx ** 2) ** 0.5)
+        return distancia <= margem
+
 
 class Retangulo(Figura):
     def desenhar(self, canvas):
         canvas.create_rectangle(self.x1, self.y1, self.x2, self.y2, outline=self.cor_borda, fill=self.cor_preenchimento)
 
+
 class Oval(Figura):
     def desenhar(self, canvas):
         canvas.create_oval(self.x1, self.y1, self.x2, self.y2, outline=self.cor_borda, fill=self.cor_preenchimento)
+
 
 class Poligono(Figura):
     def desenhar(self, canvas):
@@ -51,12 +79,13 @@ class Poligono(Figura):
         base_dir_y = self.y2
         
         canvas.create_polygon(
-            topo_x, topo_y, 
-            base_esq_x, base_esq_y, 
-            base_dir_x, base_dir_y, 
-            outline=self.cor_borda, 
+            topo_x, topo_y,
+            base_esq_x, base_esq_y,
+            base_dir_x, base_dir_y,
+            outline=self.cor_borda,
             fill=self.cor_preenchimento
         )
+
 
 class MaoLivre(Figura):
     def __init__(self, cor_borda):
@@ -78,3 +107,10 @@ class MaoLivre(Figura):
         obj = cls(cor_borda=data["cor_borda"])
         obj.pontos = [tuple(p) for p in data["pontos"]]
         return obj
+
+    def contem_ponto(self, x, y):
+        margem = 5
+        for px, py in self.pontos:
+            if abs(px - x) <= margem and abs(py - y) <= margem:
+                return True
+        return False
