@@ -26,6 +26,12 @@ class JanelaPaint:
         self.btn_selecionar = tk.Button(self.frame_botoes, text="Selecionar", bg="lightgray")
         self.btn_selecionar.pack(side=tk.LEFT, padx=10)
 
+        self.btn_agrupar = tk.Button(self.frame_botoes, text="Agrupar", bg="#e6f2ff")
+        self.btn_agrupar.pack(side=tk.LEFT, padx=2)
+
+        self.btn_desagrupar = tk.Button(self.frame_botoes, text="Desagrupar", bg="#f2e6ff")
+        self.btn_desagrupar.pack(side=tk.LEFT, padx=2)
+
         self.btn_apagar = tk.Button(self.frame_botoes, text="Apagar", bg="#ffcccc")
         self.btn_apagar.pack(side=tk.LEFT, padx=2)
 
@@ -75,6 +81,11 @@ class JanelaPaint:
                 ys = [p[1] for p in figura.pontos]
                 xmin, xmax = min(xs) - margem, max(xs) + margem
                 ymin, ymax = min(ys) - margem, max(ys) + margem
+            elif figura.__class__.__name__ == "FiguraComposta":
+                xmin = figura.x1 - margem
+                xmax = figura.x2 + margem
+                ymin = figura.y1 - margem
+                ymax = figura.y2 + margem
             else:
                 xmin = min(figura.x1, figura.x2) - margem
                 xmax = max(figura.x1, figura.x2) + margem
