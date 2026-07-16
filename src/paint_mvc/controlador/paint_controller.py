@@ -232,7 +232,7 @@ class PaintController:
                 "Retangulo": Retangulo,
                 "Oval": Oval,
                 "Poligono": Poligono,
-                "MaoLivre": MaoLivre
+                "MaoLivre": MaoLivre,
                 "FiguraComposta": FiguraComposta
             }
             novas_selecionadas = []
@@ -321,7 +321,7 @@ class PaintController:
                 "Retangulo": Retangulo,
                 "Oval": Oval,
                 "Poligono": Poligono,
-                "MaoLivre": MaoLivre
+                "MaoLivre": MaoLivre,
                 "FiguraComposta": FiguraComposta
             }
 
