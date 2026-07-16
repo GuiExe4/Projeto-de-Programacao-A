@@ -1,7 +1,7 @@
 import tkinter as tk
 import json
 from tkinter import filedialog
-from modelo.figuras import Linha, Retangulo, Oval, Poligono, MaoLivre
+from modelo.figuras import Linha, Retangulo, Oval, Poligono, MaoLivre, FiguraComposta
 
 class EstadoFerramenta:
     def clicar(self, controller, event):
@@ -98,6 +98,15 @@ class EstadoSelecionar(EstadoFerramenta):
                     for px, py in figura.pontos:
                         nova_lista.append((px + dx, py + dy))
                     figura.pontos = nova_lista
+                elif figura.__class__.__name__ == "FiguraComposta":
+                    for sub_figura in figura.figuras:
+                        if sub_figura.__class__.__name__ == "MaoLivre":
+                            sub_figura.pontos = [(px + dx, py + dy) for px, py in sub_figura.pontos]
+                        else:
+                            sub_figura.x1 += dx
+                            sub_figura.y1 += dy
+                            sub_figura.x2 += dx
+                            sub_figura.y2 += dy
                 else:
                     figura.x1 += dx
                     figura.y1 += dy
@@ -133,6 +142,8 @@ class PaintController:
         self.view.btn_poligono.config(command=lambda: self.definir_estado(EstadoPoligono()))
         self.view.btn_mao_livre.config(command=lambda: self.definir_estado(EstadoMaoLivre()))
         self.view.btn_selecionar.config(command=lambda: self.definir_estado(EstadoSelecionar()))
+        self.view.btn_agrupar.config(command=self.agrupar_figuras)
+        self.view.btn_desagrupar.config(command=self.desagrupar_figuras)
         self.view.btn_apagar.config(command=self.apagar_figura_selecionada)
         self.view.btn_frente.config(command=self.trazer_para_frente)
         self.view.btn_tras.config(command=self.enviar_para_tras)
@@ -185,7 +196,31 @@ class PaintController:
 
     def apagar_figura_por_teclado(self, event):
         self.apagar_figura_selecionada()
+    
+    def agrupar_figuras(self):
+        if len(self.figuras_selecionadas) > 1:
+            nova_composta = FiguraComposta()
+            for figura in list(self.figuras_selecionadas):
+                if figura in self.self_historico_figuras:
+                    self.self_historico_figuras.remove(figura)
+                nova_composta.adicionar(figura)
+            self.self_historico_figuras.append(nova_composta)
+            self.figuras_selecionadas = [nova_composta]
+            self.redesenhar_todos()
 
+    def desagrupar_figuras(self):
+        novas_selecionadas = []
+        for figura in list(self.figuras_selecionadas):
+            if isinstance(figura, FiguraComposta):
+                if figura in self.self_historico_figuras:
+                    self.self_historico_figuras.remove(figura)
+                for sub_figura in figura.figuras:
+                    self.self_historico_figuras.append(sub_figura)
+                    novas_selecionadas.append(sub_figura)
+        if novas_selecionadas:
+            self.figuras_selecionadas = novas_selecionadas
+            self.redesenhar_todos()
+    
     def copiar_figura(self, event):
         if self.figuras_selecionadas:
             self.area_transferencia = [figura.to_dict() for figura in self.figuras_selecionadas]
@@ -198,6 +233,7 @@ class PaintController:
                 "Oval": Oval,
                 "Poligono": Poligono,
                 "MaoLivre": MaoLivre
+                "FiguraComposta": FiguraComposta
             }
             novas_selecionadas = []
             for item in self.area_transferencia:
@@ -209,6 +245,15 @@ class PaintController:
                     deslocamento = 15
                     if tipo == "MaoLivre":
                         nova_figura.pontos = [(px + deslocamento, py + deslocamento) for px, py in nova_figura.pontos]
+                    elif tipo == "FiguraComposta":
+                        for sub in nova_figura.figuras:
+                            if sub.__class__.__name__ == "MaoLivre":
+                                sub.pontos = [(px + deslocamento, py + deslocamento) for px, py in sub.pontos]
+                            else:
+                                sub.x1 += deslocamento
+                                sub.y1 += deslocamento
+                                sub.x2 += deslocamento
+                                sub.y2 += deslocamento
                     else:
                         nova_figura.x1 += deslocamento
                         nova_figura.y1 += deslocamento
@@ -277,6 +322,7 @@ class PaintController:
                 "Oval": Oval,
                 "Poligono": Poligono,
                 "MaoLivre": MaoLivre
+                "FiguraComposta": FiguraComposta
             }
 
             for data in lista_dicts:
