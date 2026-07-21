@@ -2,6 +2,10 @@ import tkinter as tk
 import json
 from tkinter import filedialog
 from modelo.figuras import Linha, Retangulo, Oval, Poligono, MaoLivre, FiguraComposta
+from modelo.comandos import (
+    ComandoAdicionar, ComandoMover, ComandoApagar,
+    ComandoMudarCor, ComandoAgrupar, ComandoDesagrupar
+)
 
 class EstadoFerramenta:
     def clicar(self, controller, event):
@@ -85,9 +89,11 @@ class EstadoSelecionar(EstadoFerramenta):
                 
         controller.ultimo_x = event.x
         controller.ultimo_y = event.y
+        controller.inicio_drag_x = event.x
+        controller.inicio_drag_y = event.y
         controller.redesenhar_todos()
 
-    def arrastar(self, controller, event):
+     def arrastar(self, controller, event):
         if controller.figuras_selecionadas:
             dx = event.x - controller.ultimo_x
             dy = event.y - controller.ultimo_y
@@ -129,9 +135,14 @@ class PaintController:
         self.figuras_selecionadas = []
         self.ultimo_x = 0
         self.ultimo_y = 0
+        self.inicio_drag_x = 0
+        self.inicio_drag_y = 0
         self.area_transferencia = []
 
         self.self_historico_figuras = []
+        self.pilha_undo = []
+        self.pilha_redo = []
+        
         self.estado_atual = EstadoLinha()
         self.vincular_eventos()
 
@@ -145,6 +156,10 @@ class PaintController:
         self.view.btn_agrupar.config(command=self.agrupar_figuras)
         self.view.btn_desagrupar.config(command=self.desagrupar_figuras)
         self.view.btn_apagar.config(command=self.apagar_figura_selecionada)
+        
+        self.view.btn_undo.config(command=self.undo)
+        self.view.btn_redo.config(command=self.redo)
+
         self.view.btn_frente.config(command=self.trazer_para_frente)
         self.view.btn_tras.config(command=self.enviar_para_tras)
 
@@ -164,10 +179,33 @@ class PaintController:
         self.view.canvas.bind('<ButtonRelease-1>', self.solta_clique)
         
         self.view.vincular_teclado("<Delete>", self.apagar_figura_por_teclado)
+        self.view.vincular_teclado("<Control-z>", lambda e: self.undo())
+        self.view.vincular_teclado("<Control-Z>", lambda e: self.undo())
+        self.view.vincular_teclado("<Control-y>", lambda e: self.redo())
+        self.view.vincular_teclado("<Control-Y>", lambda e: self.redo())
         self.view.vincular_teclado("<Control-c>", self.copiar_figura)
         self.view.vincular_teclado("<Control-C>", self.copiar_figura)
         self.view.vincular_teclado("<Control-v>", self.colar_figura)
         self.view.vincular_teclado("<Control-V>", self.colar_figura)
+
+    def executar_comando(self, comando):
+        comando.executar()
+        self.pilha_undo.append(comando)
+        self.pilha_redo.clear()
+
+    def undo(self):
+        if self.pilha_undo:
+            comando = self.pilha_undo.pop()
+            comando.desfazer()
+            self.pilha_redo.append(comando)
+            self.redesenhar_todos()
+
+    def redo(self):
+        if self.pilha_redo:
+            comando = self.pilha_redo.pop()
+            comando.executar()
+            self.pilha_undo.append(comando)
+            self.redesenhar_todos()
 
     def definir_estado(self, estado):
         self.estado_atual = estado
@@ -177,53 +215,43 @@ class PaintController:
 
     def mudar_cor_borda(self, cor):
         self.cor_borda = cor
-        for figura in self.figuras_selecionadas:
-            figura.cor_borda = cor
-        self.redesenhar_todos()
+        if self.figuras_selecionadas:
+            cmd = ComandoMudarCor(self, self.figuras_selecionadas, cor, tipo_cor="borda")
+            self.executar_comando(cmd)
+            self.redesenhar_todos()
 
     def mudar_preenchimento(self, cor):
         self.cor_preenchimento = cor
-        for figura in self.figuras_selecionadas:
-            figura.cor_preenchimento = cor
-        self.redesenhar_todos()
+        if self.figuras_selecionadas:
+            cmd = ComandoMudarCor(self, self.figuras_selecionadas, cor, tipo_cor="preenchimento")
+            self.executar_comando(cmd)
+            self.redesenhar_todos()
 
     def apagar_figura_selecionada(self):
-        for figura in list(self.figuras_selecionadas):
-            if figura in self.self_historico_figuras:
-                self.self_historico_figuras.remove(figura)
-        self.figuras_selecionadas = []
-        self.redesenhar_todos()
+        if self.figuras_selecionadas:
+            cmd = ComandoApagar(self, self.figuras_selecionadas)
+            self.executar_comando(cmd)
+            self.redesenhar_todos()
 
     def apagar_figura_por_teclado(self, event):
         self.apagar_figura_selecionada()
     
     def agrupar_figuras(self):
         if len(self.figuras_selecionadas) > 1:
-            nova_composta = FiguraComposta()
-            for figura in list(self.figuras_selecionadas):
-                if figura in self.self_historico_figuras:
-                    self.self_historico_figuras.remove(figura)
-                nova_composta.adicionar(figura)
-            self.self_historico_figuras.append(nova_composta)
-            self.figuras_selecionadas = [nova_composta]
+            cmd = ComandoAgrupar(self, self.figuras_selecionadas)
+            self.executar_comando(cmd)
             self.redesenhar_todos()
 
     def desagrupar_figuras(self):
-        novas_selecionadas = []
-        for figura in list(self.figuras_selecionadas):
-            if isinstance(figura, FiguraComposta):
-                if figura in self.self_historico_figuras:
-                    self.self_historico_figuras.remove(figura)
-                for sub_figura in figura.figuras:
-                    self.self_historico_figuras.append(sub_figura)
-                    novas_selecionadas.append(sub_figura)
-        if novas_selecionadas:
-            self.figuras_selecionadas = novas_selecionadas
+        grupos = [f for f in self.figuras_selecionadas if isinstance(f, FiguraComposta)]
+        if grupos:
+            cmd = ComandoDesagrupar(self, grupos)
+            self.executar_comando(cmd)
             self.redesenhar_todos()
     
     def copiar_figura(self, event):
         if self.figuras_selecionadas:
-            self.area_transferencia = [figura.to_dict() for figura in self.figuras_selecionadas]
+            self.area_transferencia=[figura.to_dict() for figura in self.figuras_selecionadas]
 
     def colar_figura(self, event):
         if self.area_transferencia:
@@ -260,7 +288,8 @@ class PaintController:
                         nova_figura.x2 += deslocamento
                         nova_figura.y2 += deslocamento
                     
-                    self.self_historico_figuras.append(nova_figura)
+                    cmd = ComandoAdicionar(self, nova_figura)
+                    self.executar_comando(cmd)
                     novas_selecionadas.append(nova_figura)
             
             self.figuras_selecionadas = novas_selecionadas
@@ -290,8 +319,16 @@ class PaintController:
 
     def solta_clique(self, event):
         if self.forma_temporaria:
-            self.self_historico_figuras.append(self.forma_temporaria)
+            cmd = ComandoAdicionar(self, self.forma_temporaria)
+            self.executar_comando(cmd)
             self.forma_temporaria = None
+        elif isinstance(self.estado_atual, EstadoSelecionar) and self.figuras_selecionadas:
+            dx = event.x - self.inicio_drag_x
+            dy = event.y - self.inicio_drag_y
+            if dx != 0 or dy != 0:
+                cmd = ComandoMover(self, self.figuras_selecionadas, dx, dy)
+                self.pilha_undo.append(cmd)
+                self.pilha_redo.clear()
 
     def redesenhar_todos(self):
         self.view.canvas.delete("all")
@@ -315,6 +352,8 @@ class PaintController:
 
             self.self_historico_figuras.clear()
             self.figuras_selecionadas = []
+            self.pilha_undo.clear()
+            self.pilha_redo.clear()
             
             mapeamento_classes = {
                 "Linha": Linha,
