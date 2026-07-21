@@ -35,6 +35,12 @@ class JanelaPaint:
         self.btn_apagar = tk.Button(self.frame_botoes, text="Apagar", bg="#ffcccc")
         self.btn_apagar.pack(side=tk.LEFT, padx=2)
 
+        self.btn_undo = tk.Button(self.frame_botoes, text="Desfazer", bg="#ffe6cc")
+        self.btn_undo.pack(side=tk.LEFT, padx=2)
+
+        self.btn_redo = tk.Button(self.frame_botoes, text="Refazer", bg="#e6ffe6")
+        self.btn_redo.pack(side=tk.LEFT, padx=2)
+
         self.btn_frente = tk.Button(self.frame_botoes, text="Frente", bg="lightyellow")
         self.btn_frente.pack(side=tk.LEFT, padx=2)
 
