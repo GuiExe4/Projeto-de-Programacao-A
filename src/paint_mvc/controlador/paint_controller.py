@@ -93,7 +93,7 @@ class EstadoSelecionar(EstadoFerramenta):
         controller.inicio_drag_y = event.y
         controller.redesenhar_todos()
 
-     def arrastar(self, controller, event):
+    def arrastar(self, controller, event):
         if controller.figuras_selecionadas:
             dx = event.x - controller.ultimo_x
             dy = event.y - controller.ultimo_y
